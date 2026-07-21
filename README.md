@@ -1,123 +1,44 @@
-ArcadeOS
+# ArcadeOS
 
-A bootable 32-bit x86 arcade operating system written in C and NASM assembly.
+**A bootable 32-bit x86 arcade operating system written from scratch in C and NASM assembly.**
 
-Developed on an ASUS ROG Strix, tested in QEMU, packaged as a bootable ISO, and deployed by USB to a legacy Dell Inspiron 5150.
+ArcadeOS boots through GRUB, initializes its own low-level hardware services, renders a custom graphical interface, accepts raw keyboard input, produces PC-speaker audio, and runs a complete version of Pong without relying on a host operating system, game engine, graphics library, or audio framework.
 
-Portfolio Demo
+The system was developed on an ASUS ROG Strix, tested in QEMU, packaged as a bootable ISO, and deployed by USB to a legacy Dell Inspiron 5150.
 
-Overview
+## Project Highlights
 
-ArcadeOS is a freestanding hobby operating system built to explore how software interacts directly with a computer when there is no host operating system underneath it.
+* Built a freestanding 32-bit x86 kernel using C and NASM
+* Configured protected mode, the Global Descriptor Table, and segment registers
+* Implemented interrupt handling and Programmable Interval Timer support
+* Created keyboard, framebuffer graphics, bitmap-font, and PC-speaker subsystems
+* Built a title screen, game-selection interface, and playable Pong game
+* Added one-player and two-player modes with predictive CPU behavior
+* Packaged the project as a bootable ISO for QEMU and physical x86 hardware
+* Diagnosed and fixed a rendering bottleneck that appeared only on legacy hardware
 
-The project boots through GRUB, enters a 32-bit x86 environment, initializes the hardware services needed by the kernel, displays a custom framebuffer interface, reads keyboard input, produces PC-speaker audio, and runs a playable version of Pong.
+## Why I Built It
 
-ArcadeOS currently includes:
+I built ArcadeOS to move beyond studying operating-system concepts only in theory.
 
-A custom boot process and linker layout
+A normal application can depend on an operating system, window manager, graphics API, audio library, and input framework. ArcadeOS cannot. The project has to establish the execution environment and provide the services its game needs directly.
 
-32-bit x86 protected-mode setup
+That required me to work through the complete path from machine startup to an interactive program:
 
-Global Descriptor Table setup
+1. Boot the kernel through GRUB
+2. Enter a 32-bit protected-mode environment
+3. Configure processor segments and linked memory sections
+4. Initialize interrupts and timer hardware
+5. Read keyboard state through port-mapped input
+6. Write pixels directly to a linear framebuffer
+7. Generate sound through the PC speaker
+8. Coordinate input, rendering, audio, timing, and game logic in a real-time loop
 
-Interrupt handling
+The result is intentionally small in scope, but complete enough to boot, interact with hardware, and run a testable application.
 
-Programmable Interval Timer support
+## System Architecture
 
-Keyboard input
-
-800×600 32-bit framebuffer graphics
-
-Bitmap-font text rendering
-
-PC-speaker music and sound effects
-
-A title screen and game-selection interface
-
-One-player and two-player Pong
-
-Predictive CPU paddle behavior
-
-Scoring, collisions, increasing ball speed, and win screens
-
-QEMU support
-
-Booting on physical x86 hardware
-
-Why I Built It
-
-I created ArcadeOS to move beyond learning operating-system concepts only in theory.
-
-Instead of using an existing engine, windowing system, graphics library, or audio framework, I had to build the low-level systems that the game depends on:
-
-Booting the kernel
-
-Organizing memory and linked sections
-
-Configuring processor segments
-
-Handling hardware interrupts
-
-Tracking time with the PIT
-
-Reading raw keyboard state
-
-Writing pixels directly to a framebuffer
-
-Programming the PC speaker
-
-Managing a real-time game loop
-
-The result is deliberately small, but it demonstrates the complete path from booting a machine to running an interactive program.
-
-Physical Hardware Deployment
-
-ArcadeOS was developed on an ASUS ROG Strix and initially tested with QEMU.
-
-After the operating system worked in the emulator, I generated a bootable ISO, wrote it to a USB drive, and booted it on a separate Dell Inspiron 5150.
-
-This step mattered because an emulator cannot fully reproduce the timing, bandwidth, and behavior of every physical machine.
-
-Hardware-specific problem discovered
-
-The original Pong renderer used double buffering and copied the complete 800×600×32-bit back buffer into video memory for each displayed frame.
-
-That approach worked smoothly in QEMU, but it caused severe lag on the Dell Inspiron 5150 because the older machine could not transfer full frames to its framebuffer quickly enough.
-
-I diagnosed the rendering bottleneck and changed Pong to use incremental direct rendering:
-
-Erase the previous ball and paddle positions.
-
-Restore any permanent court elements that were overwritten.
-
-Draw the objects at their new positions.
-
-Avoid copying the entire framebuffer every frame.
-
-This significantly reduced the amount of video memory written during gameplay and allowed Pong to run properly on the physical laptop.
-
-Direct rendering can produce minor frame tearing on the older machine. I accepted that tradeoff because it improves performance and also fits the project's retro arcade presentation.
-
-What this demonstrates
-
-Moving ArcadeOS from the development laptop to a separate physical computer demonstrates an important part of systems programming: software must work within real hardware constraints rather than only inside the environment where it was created.
-
-More precisely, this project demonstrates portability across different machines within ArcadeOS's supported platform:
-
-32-bit x86
-
-Legacy BIOS-compatible booting
-
-GRUB Multiboot support
-
-A compatible linear framebuffer
-
-Standard PC keyboard, PIT, and PC-speaker hardware interfaces
-
-It does not currently claim cross-architecture portability to systems such as ARM or RISC-V. Supporting those architectures would require separate boot code, hardware drivers, memory layouts, and processor-specific implementations.
-
-System Architecture
-
+```text
 GRUB
   |
   v
@@ -126,13 +47,13 @@ boot/boot.asm
   v
 32-bit kernel entry
   |
-  +--> GDT and segment setup
-  +--> Interrupt initialization
-  +--> PIT timer
+  +--> GDT and segment initialization
+  +--> Interrupt Descriptor Table and IRQ handling
+  +--> Programmable Interval Timer
   +--> Keyboard input
   +--> Framebuffer graphics
-  +--> Font rendering
-  +--> PC-speaker sound
+  +--> Bitmap-font rendering
+  +--> PC-speaker audio
   |
   v
 Title Screen
@@ -142,183 +63,128 @@ Game Selector
   |
   v
 Pong
+```
 
-Pong
+## Core Systems
 
-ArcadeOS includes a complete Pong game running directly inside the kernel.
+| Subsystem     | Implementation                                         |
+| ------------- | ------------------------------------------------------ |
+| Boot          | GRUB Multiboot entry with custom assembly startup code |
+| CPU setup     | 32-bit x86 protected mode and Global Descriptor Table  |
+| Memory layout | Custom linker script and freestanding kernel sections  |
+| Interrupts    | Interrupt setup with assembly stubs and C handlers     |
+| Timing        | PIT channel 0 provides the system tick                 |
+| Input         | Raw keyboard scancode handling                         |
+| Graphics      | 800×600, 32-bit linear framebuffer                     |
+| Text          | Custom bitmap-font renderer                            |
+| Audio         | PIT channel 2 and PC-speaker tone generation           |
+| Application   | Menu system and real-time Pong game loop               |
 
-Game features
+## Physical Hardware Deployment
 
-One-player mode against a CPU paddle
+ArcadeOS was first tested in QEMU and then deployed to a Dell Inspiron 5150 using a bootable USB drive.
 
-Two-player local mode
+Running on physical hardware exposed a performance problem that was not visible in the emulator.
 
-First player to seven points wins
+### Rendering Bottleneck
 
-Paddle and wall collision handling
+The original Pong renderer used double buffering and copied the complete 800×600×32-bit back buffer into video memory for every displayed frame.
 
-Ball-angle changes based on paddle impact position
+Each full-screen copy moved approximately **1.92 MB of pixel data per frame**. QEMU handled this smoothly, but the Dell Inspiron 5150 could not transfer full frames to video memory quickly enough, causing severe gameplay lag.
 
-Ball-speed progression during rallies
+I traced the problem to framebuffer bandwidth rather than the game physics or timer logic.
 
-Score display
+### Rendering Redesign
 
-Rematch and mode-selection screens
+I replaced full-frame copying during gameplay with incremental direct rendering:
 
-Nonblocking PC-speaker sound effects
+* Erase the previous ball and paddle positions
+* Restore permanent court elements that were overwritten
+* Draw the objects at their new positions
+* Leave unchanged regions of the framebuffer untouched
 
-CPU reaction delay and predictive ball tracking
+This reduced unnecessary video-memory writes and made Pong playable on the physical laptop.
 
-Direct incremental rendering for legacy hardware
+The approach can produce minor frame tearing on older hardware. I accepted and documented that tradeoff because the performance improvement was more important for the project's supported target system.
 
-Controls
+This was the project's most valuable engineering lesson: code that works in an emulator is not necessarily correct or efficient for real hardware.
 
-General menus
+## Pong
 
-Key
+Pong runs directly inside the kernel and uses the operating-system services implemented by the project.
 
-Action
+### Features
 
-Arrow keys or W / S
+* One-player mode against a CPU-controlled paddle
+* Two-player local multiplayer
+* Predictive CPU ball tracking with a reaction delay
+* Paddle and wall collision handling
+* Ball-angle changes based on impact position
+* Increasing ball speed during longer rallies
+* First-to-seven scoring
+* Score, victory, rematch, and mode-selection screens
+* Nonblocking sound effects driven by timer ticks
+* Incremental rendering optimized for legacy hardware
 
-Change the highlighted option
+### Controls
 
-Enter
+| Mode       | Control                 | Action             |
+| ---------- | ----------------------- | ------------------ |
+| Menus      | Arrow keys or `W` / `S` | Move selection     |
+| Menus      | `Enter`                 | Confirm            |
+| Menus      | `Esc`                   | Go back            |
+| One player | Up / Down arrows        | Move player paddle |
+| Two player | Up / Down arrows        | Move Player One    |
+| Two player | `W` / `S`               | Move Player Two    |
 
-Confirm
+## Audio
 
-Esc
+ArcadeOS programs the PC speaker through PIT channel 2 while reserving PIT channel 0 for system timer interrupts.
 
-Return to the previous screen
+The audio system includes:
 
-One-player Pong
+* Looping title-screen music
+* Game-selection music
+* Menu movement and confirmation sounds
+* Pong wall, paddle, score, and victory effects
+* Timer-driven, nonblocking playback
 
-Key
+Keeping the timer and speaker channels separate prevents audio playback from changing the operating system's main timing frequency.
 
-Action
+## Project Structure
 
-Up Arrow
-
-Move Player One paddle up
-
-Down Arrow
-
-Move Player One paddle down
-
-Esc
-
-Return to mode selection
-
-Two-player Pong
-
-Player
-
-Up
-
-Down
-
-Player One
-
-Up Arrow
-
-Down Arrow
-
-Player Two
-
-W
-
-S
-
-Audio
-
-ArcadeOS programs the PC speaker through PIT channel 2.
-
-The audio system supports:
-
-A looping title-screen theme
-
-A calmer game-selection melody
-
-Menu movement sounds
-
-Confirmation sounds
-
-Back-navigation sounds
-
-Pong wall, paddle, score, and victory effects
-
-Audio playback is advanced using timer ticks so effects can play without blocking the game loop.
-
-Project Structure
-
+```text
 ArcadeOS/
 ├── boot/
-│   ├── boot.asm
-│   └── interrupts.asm
-├── iso/
-│   └── boot/
-│       └── grub/
-│           └── grub.cfg
-├── kernel.c
-├── terminal.c
-├── terminal.h
-├── keyboard.c
-├── keyboard.h
-├── io.h
-├── interrupts.c
-├── interrupts.h
-├── timer.c
-├── timer.h
-├── memory.c
-├── memory.h
-├── graphics.c
-├── graphics.h
-├── font.c
-├── font.h
-├── title_screen.c
-├── title_screen.h
-├── game_select.c
-├── game_select.h
-├── pong.c
-├── pong.h
-├── sound.c
-├── sound.h
-├── music.c
-├── music.h
-├── multiboot.h
-├── linker.ld
-└── Makefile
+│   ├── boot.asm              # Kernel entry and protected-mode setup
+│   └── interrupts.asm        # Low-level interrupt stubs
+├── iso/boot/grub/
+│   └── grub.cfg              # GRUB configuration
+├── kernel.c                  # Kernel initialization and main control flow
+├── interrupts.c/.h           # Interrupt setup and handlers
+├── timer.c/.h                # PIT timing services
+├── keyboard.c/.h             # Keyboard input
+├── graphics.c/.h             # Framebuffer drawing
+├── font.c/.h                 # Bitmap-font rendering
+├── title_screen.c/.h         # Title-screen interface
+├── game_select.c/.h          # Game-selection interface
+├── pong.c/.h                 # Pong logic and rendering
+├── sound.c/.h                # PC-speaker sound effects
+├── music.c/.h                # Music sequencing
+├── memory.c/.h               # Freestanding memory utilities
+├── terminal.c/.h             # Terminal support
+├── multiboot.h               # Multiboot structures
+├── linker.ld                 # Kernel memory layout
+└── Makefile                  # Build and QEMU commands
+```
 
-Development Environment
+## Build and Run
 
-ArcadeOS was developed using:
+The following commands assume Ubuntu or Windows Subsystem for Linux.
 
-Windows on an ASUS ROG Strix
+### Install Dependencies
 
-Windows Subsystem for Linux
-
-GCC
-
-GNU linker
-
-NASM
-
-GNU Make
-
-GRUB utilities
-
-xorriso
-
-QEMU
-
-Rufus for writing the ISO to USB
-
-Building ArcadeOS
-
-The commands below assume an Ubuntu or WSL-based development environment.
-
-Required tools
-
+```bash
 sudo apt update
 
 sudo apt install \
@@ -330,154 +196,109 @@ sudo apt install \
     xorriso \
     qemu-system-x86 \
     make
+```
 
-Build the ISO
+### Build the Bootable ISO
 
-From the project directory:
-
+```bash
 make clean
 make ArcadeOS.iso
+```
 
-The generated boot image will be:
+### Run in QEMU
 
-ArcadeOS.iso
-
-Run in QEMU
-
+```bash
 make run
+```
 
-Installing on a USB Drive
+The generated boot image is:
 
-Warning: writing the ISO will erase the selected USB drive.
+```text
+ArcadeOS.iso
+```
 
-ArcadeOS was written to USB using Rufus with:
+## Boot on Physical Hardware
 
-Partition scheme: MBR
-Target system: BIOS or UEFI-CSM
-File system: FAT32
+> **Warning:** Writing an ISO to a USB drive erases the selected drive. Verify the target device before continuing.
 
-Basic process:
+ArcadeOS was deployed with Rufus using:
 
-Build ArcadeOS.iso.
+* **Partition scheme:** MBR
+* **Target system:** BIOS or UEFI-CSM
+* **File system:** FAT32
 
-Open Rufus.
+The target machine must support the hardware interfaces currently used by ArcadeOS:
 
-Select the correct USB drive.
+* 32-bit x86
+* Legacy BIOS-compatible booting
+* GRUB Multiboot
+* Compatible linear framebuffer
+* Standard PC keyboard
+* Programmable Interval Timer
+* PC speaker
 
-Select ArcadeOS.iso.
+ArcadeOS does not currently support other architectures such as ARM or RISC-V. Those targets would require separate boot code, memory layouts, processor setup, and device drivers.
 
-Start the write process.
+## Technical Challenges
 
-Wait until Rufus reports READY.
+### Booting Without a Host Operating System
 
-Safely eject the USB.
+ArcadeOS cannot use normal application-level services. It provides its own startup code, linker organization, kernel entry point, processor setup, hardware initialization, and runtime control flow.
 
-Insert it into the target computer.
+### Interrupt-Driven Timing
 
-Open the computer's boot menu.
+The PIT tick counter coordinates:
 
-Select the USB device.
+* Game updates
+* Music playback
+* Sound effects
+* CPU reaction timing
+* Animation timing
 
-Technical Challenges
+### Emulator Versus Hardware Behavior
 
-Booting without an existing operating system
+QEMU enabled fast iteration, but physical deployment revealed a framebuffer bottleneck that required an architectural rendering change rather than a superficial adjustment to game-speed values.
 
-ArcadeOS cannot rely on normal application services. The project has to provide its own startup code, linker organization, kernel entry point, hardware setup, and runtime behavior.
+### Shared Timer Hardware
 
-Interrupt-driven timing
+PIT channel 0 drives operating-system timing, while PIT channel 2 generates PC-speaker tones. Separating these responsibilities keeps audio playback from disrupting the game loop.
 
-The system timer provides a stable tick counter used by:
+## Skills Demonstrated
 
-Game updates
+* Bare-metal and freestanding C
+* x86 NASM assembly
+* Bootloaders and GRUB Multiboot
+* Linker scripts and binary layout
+* Protected-mode and segment initialization
+* Hardware interrupts
+* Port-mapped input and output
+* Timer-driven programming
+* Keyboard input handling
+* Framebuffer graphics
+* PC-speaker audio
+* Real-time game-loop design
+* Emulator-based testing
+* Physical-hardware deployment
+* Performance debugging under hardware constraints
+* Engineering tradeoff analysis and documentation
 
-Music playback
+## Current Scope
 
-Sound effects
+ArcadeOS is an educational operating system focused on low-level startup, hardware interaction, graphics, input, sound, timing, and an interactive game.
 
-CPU reaction timing
+It is not intended to be a general-purpose desktop operating system. Its purpose is to demonstrate a complete, bootable, and testable systems-programming project.
 
-Animation timing
+## Future Work
 
-Emulator versus physical hardware
+Potential improvements include:
 
-QEMU was useful for rapid development, but the Dell Inspiron 5150 exposed a framebuffer-performance problem that was not obvious in the emulator.
-
-Solving that issue required changing the rendering strategy rather than merely increasing game speed values. The bottleneck was the amount of graphics memory transferred, not the Pong physics.
-
-Shared PIT hardware
-
-ArcadeOS uses:
-
-PIT channel 0 for timer interrupts
-
-PIT channel 2 for PC-speaker tones
-
-Keeping these channels separate prevents audio code from changing the operating system's main timer frequency.
-
-What I Learned
-
-This project helped me develop practical experience with:
-
-Bare-metal C
-
-x86 assembly
-
-Bootloaders and Multiboot
-
-Linker scripts
-
-Protected-mode setup
-
-Hardware interrupts
-
-Port-mapped input and output
-
-Timer-based programming
-
-Keyboard drivers
-
-Framebuffer graphics
-
-PC-speaker audio
-
-Real-time game loops
-
-Debugging emulator-specific assumptions
-
-Optimizing software for older physical hardware
-
-Designing software around supported hardware interfaces
-
-The most important lesson was that getting code to run in an emulator is not the end of systems work. A system must also handle the behavior and limitations of the hardware on which it is expected to run.
-
-Current Scope
-
-ArcadeOS is an educational hobby operating system focused on booting, hardware interaction, graphics, sound, input, and an interactive game.
-
-It is not intended to be a general-purpose desktop operating system. Its current purpose is to demonstrate low-level systems programming through a complete, bootable, and testable project.
-
-Future Improvements
-
-Possible future additions include:
-
-Additional arcade games
-
-A reusable game API
-
-More efficient dirty-rectangle rendering
-
-Hardware capability detection
-
-Multiple graphics modes
-
-Improved memory management
-
-Filesystem support
-
-Additional device drivers
-
-A settings screen
-
-Persistent high scores
-
-More extensive testing on different x86 computers
+* Dirty-rectangle rendering
+* Hardware capability detection
+* Additional graphics modes
+* Improved memory management
+* Filesystem support
+* Additional device drivers
+* A reusable game API
+* Additional arcade games
+* Persistent high scores
+* Testing across more x86 hardware
