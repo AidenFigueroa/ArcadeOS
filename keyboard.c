@@ -1,5 +1,6 @@
 #include "keyboard.h"
 #include "io.h"
+#include "volume.h"
 
 
 static unsigned char key_down[KEY_COUNT];
@@ -112,6 +113,15 @@ static keyboard_key_t keyboard_translate_scancode(
         case 0x20:
             return KEY_RIGHT;
 
+        /*
+         * Set-1 keyboard scan codes for F1 and F2.
+         */
+        case 0x3B:
+            return KEY_F1;
+
+        case 0x3C:
+            return KEY_F2;
+
         default:
             return KEY_NONE;
     }
@@ -178,7 +188,22 @@ void keyboard_update(void)
              */
             if (!key_down[key])
             {
-                key_pressed[key] = 1;
+                /*
+                 * F1 and F2 are global OS controls. Handle
+                 * them here so they work on every screen,
+                 * including Pong, without duplicating logic.
+                 */
+                if (
+                    key == KEY_F1 ||
+                    key == KEY_F2
+                )
+                {
+                    volume_handle_key_press(key);
+                }
+                else
+                {
+                    key_pressed[key] = 1;
+                }
             }
 
             key_down[key] = 1;
@@ -316,6 +341,7 @@ char keyboard_getchar(void)
         }
     }
 }
+
 
 void keyboard_clear_pressed_events(void)
 {
