@@ -18,10 +18,10 @@ OBJECTS = \
 	font.o \
 	sound.o \
 	music.o \
+	volume.o \
 	title_screen.o \
 	game_select.o \
-	pong.o \
-	
+	pong.o
 
 all: ArcadeOS.iso
 
@@ -34,13 +34,13 @@ interrupt_stubs.o: boot/interrupts.asm
 kernel.o: kernel.c multiboot.h graphics.h font.h title_screen.h game_select.h pong.h keyboard.h interrupts.h timer.h memory.h io.h
 	$(CC) $(CFLAGS) -c kernel.c -o kernel.o
 
-pong.o: pong.c pong.h graphics.h font.h keyboard.h timer.h
+pong.o: pong.c pong.h graphics.h font.h keyboard.h timer.h music.h volume.h
 	$(CC) $(CFLAGS) -c pong.c -o pong.o
 
-game_select.o: game_select.c game_select.h graphics.h font.h keyboard.h timer.h
+game_select.o: game_select.c game_select.h graphics.h font.h keyboard.h timer.h music.h volume.h
 	$(CC) $(CFLAGS) -c game_select.c -o game_select.o
 
-title_screen.o: title_screen.c title_screen.h graphics.h font.h keyboard.h timer.h multiboot.h
+title_screen.o: title_screen.c title_screen.h graphics.h font.h keyboard.h timer.h multiboot.h music.h volume.h
 	$(CC) $(CFLAGS) -c title_screen.c -o title_screen.o
 
 font.o: font.c font.h graphics.h multiboot.h
@@ -49,7 +49,7 @@ font.o: font.c font.h graphics.h multiboot.h
 terminal.o: terminal.c terminal.h
 	$(CC) $(CFLAGS) -c terminal.c -o terminal.o
 
-keyboard.o: keyboard.c keyboard.h io.h
+keyboard.o: keyboard.c keyboard.h io.h volume.h
 	$(CC) $(CFLAGS) -c keyboard.c -o keyboard.o
 
 interrupts.o: interrupts.c interrupts.h io.h
@@ -63,6 +63,15 @@ memory.o: memory.c memory.h
 
 graphics.o: graphics.c graphics.h multiboot.h
 	$(CC) $(CFLAGS) -c graphics.c -o graphics.o
+
+sound.o: sound.c sound.h io.h volume.h
+	$(CC) $(CFLAGS) -c sound.c -o sound.o
+
+music.o: music.c music.h sound.h timer.h
+	$(CC) $(CFLAGS) -c music.c -o music.o
+
+volume.o: volume.c volume.h graphics.h font.h sound.h keyboard.h
+	$(CC) $(CFLAGS) -c volume.c -o volume.o
 
 kernel.bin: $(OBJECTS) linker.ld
 	$(LD) $(LDFLAGS) -o kernel.bin $(OBJECTS)

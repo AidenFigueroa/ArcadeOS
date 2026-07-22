@@ -1,5 +1,6 @@
 #include "sound.h"
 #include "io.h"
+#include "volume.h"
 
 /*
  * The Programmable Interval Timer receives a clock signal
@@ -35,6 +36,15 @@ void sound_play_tone(uint32_t frequency)
 {
     uint32_t divisor;
     uint8_t speaker_state;
+
+    /*
+     * Level zero is a real global mute.
+     */
+    if (volume_is_muted())
+    {
+        sound_stop();
+        return;
+    }
 
     /*
      * A frequency of zero cannot produce a valid tone.
