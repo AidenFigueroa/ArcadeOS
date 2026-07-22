@@ -268,9 +268,9 @@ static void title_draw_cabinet(void)
      * Main ArcadeOS logo.
      */
     font_draw_text(
-        "ARCADEOS",
+        "THE ARCADE",
         title_center_text(
-            "ARCADEOS",
+            "THE ARCADE",
             7
         ),
         marquee_y + 35,
@@ -283,9 +283,9 @@ static void title_draw_cabinet(void)
      * Subtitle.
      */
     font_draw_text(
-        "THE ARCADE STARTS HERE",
+        "YOUR ARCADE ADVENTURE STARTS HERE",
         title_center_text(
-            "THE ARCADE STARTS HERE",
+            "YOUR ARCADE ADVENTURE STARTS HERE",
             2
         ),
         marquee_y +

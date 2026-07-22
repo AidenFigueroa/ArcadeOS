@@ -9,7 +9,7 @@
 /*
  * Start at a comfortable software level.
  */
-static int current_volume_level = 7;
+static int current_volume_level = VOLUME_MAX_LEVEL;
 
 
 /*
@@ -18,18 +18,19 @@ static int current_volume_level = 7;
  */
 static void volume_make_level_text(char text[4])
 {
-    if (current_volume_level >= 10)
+    if (current_volume_level == VOLUME_MIN_LEVEL)
     {
-        text[0] = '1';
-        text[1] = '0';
-        text[2] = '\0';
-        return;
+        text[0] = 'O';
+        text[1] = 'F';
+        text[2] = 'F';
+        text[3] = '\0';
     }
-
-    text[0] =
-        (char)('0' + current_volume_level);
-
-    text[1] = '\0';
+    else
+    {
+        text[0] = 'O';
+        text[1] = 'N';
+        text[2] = '\0';
+    }
 }
 
 
@@ -115,14 +116,14 @@ static void volume_draw_overlay(void)
 
 
     font_draw_text(
-        current_volume_level == 0
-            ? "MUTED"
-            : "VOLUME",
-        panel_x + 16,
-        panel_y + 14,
-        2,
-        white
-    );
+    current_volume_level == VOLUME_MIN_LEVEL
+        ? "SOUND MUTED"
+        : "SOUND ON",
+    panel_x + 16,
+    panel_y + 14,
+    2,
+    white
+);
 
 
     bar_x =
@@ -183,45 +184,44 @@ static void volume_draw_overlay(void)
 
 void volume_initialize(void)
 {
-    current_volume_level = 7;
+    current_volume_level = VOLUME_MAX_LEVEL;
 }
-
 
 void volume_handle_key_press(keyboard_key_t key)
 {
     if (key == KEY_F1)
     {
-        if (current_volume_level > VOLUME_MIN_LEVEL)
-        {
-            current_volume_level--;
-        }
+        /*
+         * F1 mutes ArcadeOS and immediately stops
+         * any tone currently playing.
+         */
+        current_volume_level = VOLUME_MIN_LEVEL;
+        sound_stop();
     }
     else if (key == KEY_F2)
     {
-        if (current_volume_level < VOLUME_MAX_LEVEL)
-        {
-            current_volume_level++;
-        }
+        /*
+         * F2 unmutes ArcadeOS.
+         *
+         * The next tone requested by the music system
+         * will be allowed to play.
+         */
+        current_volume_level = VOLUME_MAX_LEVEL;
     }
     else
     {
         return;
     }
 
+    volume_draw_overlay();
+}
 
     /*
      * Zero is a real mute. The classic PC speaker does not expose normal
      * amplitude control, so intermediate levels currently represent the
      * OS setting and slider state rather than separate hardware amplitudes.
      */
-    if (current_volume_level == 0)
-    {
-        sound_stop();
-    }
-
-
-    volume_draw_overlay();
-}
+    
 
 
 void volume_update_overlay(void)
