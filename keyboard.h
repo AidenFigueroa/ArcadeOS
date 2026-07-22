@@ -16,6 +16,9 @@ typedef enum
     KEY_W,
     KEY_S,
 
+    KEY_F1,
+    KEY_F2,
+
     KEY_COUNT
 
 } keyboard_key_t;
@@ -66,4 +69,3 @@ char keyboard_getchar(void);
 void keyboard_clear_pressed_events(void);
 
 #endif
-
