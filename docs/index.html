@@ -63,7 +63,7 @@
     </div>
   </main>
 
-  <script src="https://copy.sh/v86/build/libv86.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/v86@0.5.432/build/libv86.js"></script>
   <script>
     const startButton = document.getElementById('start');
     const restartButton = document.getElementById('restart');
@@ -80,12 +80,12 @@
 
       try {
         emulator = new V86({
-          wasm_path: 'https://copy.sh/v86/build/v86.wasm',
+          wasm_path: 'https://cdn.jsdelivr.net/npm/v86@0.5.432/build/v86.wasm',
           memory_size: 64 * 1024 * 1024,
           vga_memory_size: 8 * 1024 * 1024,
           screen_container: document.getElementById('screen_container'),
-          bios: { url: 'https://copy.sh/v86/bios/seabios.bin' },
-          vga_bios: { url: 'https://copy.sh/v86/bios/vgabios.bin' },
+          bios: { url: 'https://raw.githubusercontent.com/copy/v86/master/bios/seabios.bin' },
+          vga_bios: { url: 'https://raw.githubusercontent.com/copy/v86/master/bios/vgabios.bin' },
           cdrom: { url: 'https://raw.githubusercontent.com/AidenFigueroa/ArcadeOS/main/ArcadeOS.iso' },
           autostart: true
         });
