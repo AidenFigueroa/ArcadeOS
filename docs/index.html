@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Run ArcadeOS, a bootable 32-bit x86 arcade operating system, directly in your browser.">
+  <title>ArcadeOS — Browser Demo</title>
+  <style>
+    :root{color-scheme:dark;--bg:#07090d;--panel:#111720;--line:#283343;--text:#eef5ff;--muted:#9baabd;--green:#72f1b8}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;background:radial-gradient(circle at 50% -20%,#18324a 0,transparent 45%),var(--bg);color:var(--text);font:16px/1.55 system-ui,sans-serif}
+    main{width:min(1100px,calc(100% - 32px));margin:auto;padding:40px 0 56px}
+    header{display:flex;align-items:end;justify-content:space-between;gap:24px;margin-bottom:24px}
+    h1{margin:0;font-size:clamp(2.4rem,7vw,5.5rem);line-height:.95;letter-spacing:-.065em}
+    .eyebrow{margin-bottom:12px;color:var(--green);font:700 .78rem ui-monospace,monospace;text-transform:uppercase;letter-spacing:.13em}
+    p{max-width:720px;color:var(--muted)}
+    .actions{display:flex;flex-wrap:wrap;gap:10px;margin:22px 0}
+    button,a.button{min-height:44px;padding:11px 16px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text);font:700 .9rem inherit;text-decoration:none;cursor:pointer}
+    button.primary{border-color:var(--green);background:var(--green);color:#06110c}
+    button:disabled{cursor:not-allowed;opacity:.45}
+    .shell{overflow:hidden;border:1px solid var(--line);border-radius:16px;background:#000;box-shadow:0 28px 90px #0008}
+    .toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
+    #status{color:var(--muted);font:600 .8rem ui-monospace,monospace}
+    #screen_container{display:grid;place-items:center;min-height:450px;padding:16px;overflow:auto;background:#000}
+    #screen_container canvas{max-width:100%;height:auto;image-rendering:pixelated}
+    #screen_container div{white-space:pre;font:14px monospace;line-height:14px}
+    .help{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px}
+    .help div{padding:16px;border:1px solid var(--line);border-radius:12px;background:#0e141c}
+    .help strong{display:block;margin-bottom:4px}
+    .help span{color:var(--muted);font-size:.9rem}
+    @media(max-width:720px){header{align-items:start;flex-direction:column}.help{grid-template-columns:1fr}#screen_container{min-height:320px;padding:4px}}
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <div class="eyebrow">Bootable 32-bit x86 operating system</div>
+        <h1>ArcadeOS</h1>
+        <p>A freestanding arcade operating system written in C and NASM. Launch the real ISO below in an x86 emulator running entirely inside your browser.</p>
+      </div>
+      <a class="button" href="https://github.com/AidenFigueroa/ArcadeOS" target="_blank" rel="noopener">View source</a>
+    </header>
+
+    <div class="actions">
+      <button class="primary" id="start">Launch ArcadeOS</button>
+      <button id="restart" disabled>Restart</button>
+      <button id="fullscreen" disabled>Fullscreen</button>
+    </div>
+
+    <section class="shell" aria-label="ArcadeOS emulator">
+      <div class="toolbar"><strong>ArcadeOS virtual machine</strong><span id="status">Ready to launch</span></div>
+      <div id="screen_container">
+        <div></div>
+        <canvas style="display:none"></canvas>
+      </div>
+    </section>
+
+    <div class="help">
+      <div><strong>Menus</strong><span>Arrow keys or W/S to move, Enter to select, Esc to go back.</span></div>
+      <div><strong>One-player Pong</strong><span>Use Up and Down arrows to control your paddle.</span></div>
+      <div><strong>Two-player Pong</strong><span>Player one uses arrows; player two uses W and S.</span></div>
+    </div>
+  </main>
+
+  <script src="https://copy.sh/v86/build/libv86.js"></script>
+  <script>
+    const startButton = document.getElementById('start');
+    const restartButton = document.getElementById('restart');
+    const fullscreenButton = document.getElementById('fullscreen');
+    const status = document.getElementById('status');
+    let emulator;
+
+    function setStatus(message) { status.textContent = message; }
+
+    startButton.addEventListener('click', () => {
+      if (emulator) return;
+      startButton.disabled = true;
+      setStatus('Loading emulator and ISO…');
+
+      try {
+        emulator = new V86({
+          wasm_path: 'https://copy.sh/v86/build/v86.wasm',
+          memory_size: 64 * 1024 * 1024,
+          vga_memory_size: 8 * 1024 * 1024,
+          screen_container: document.getElementById('screen_container'),
+          bios: { url: 'https://copy.sh/v86/bios/seabios.bin' },
+          vga_bios: { url: 'https://copy.sh/v86/bios/vgabios.bin' },
+          cdrom: { url: 'https://raw.githubusercontent.com/AidenFigueroa/ArcadeOS/main/ArcadeOS.iso' },
+          autostart: true
+        });
+
+        emulator.add_listener('emulator-ready', () => {
+          setStatus('Running — click the display, then use your keyboard');
+          restartButton.disabled = false;
+          fullscreenButton.disabled = false;
+        });
+      } catch (error) {
+        setStatus('Unable to start: ' + error.message);
+        startButton.disabled = false;
+        emulator = undefined;
+      }
+    });
+
+    restartButton.addEventListener('click', () => {
+      if (!emulator) return;
+      setStatus('Restarting…');
+      emulator.restart();
+    });
+
+    fullscreenButton.addEventListener('click', () => {
+      if (emulator) emulator.screen_go_fullscreen();
+    });
+  </script>
+</body>
+</html>
